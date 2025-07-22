@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: ⬇️ Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Cho phép git pull hoạt động đúng
 
       - name: 📁 Prepare dirs
         run: mkdir -p links .backup
@@ -46,8 +48,11 @@ jobs:
           name="${{ github.event.client_payload.vps_name || 'manual-vps' }}"
           zip -qr ".backup/$name.zip" . -x ".git/*" ".github/*" ".backup/*" || true
 
-      - name: 📤 Pull latest from origin
-        run: git pull --rebase origin main || true
+      - name: 📤 Pull latest from origin to avoid divergence
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main || true
 
       - name: 📤 Push updated files
         uses: stefanzweifel/git-auto-commit-action@v5
