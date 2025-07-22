@@ -8,7 +8,7 @@ on:
 jobs:
   start-vps:
     runs-on: ubuntu-latest
-    timeout-minutes: 360  # 6 hours
+    timeout-minutes: 360
     env:
       TMATE_SERVER: nyc1.tmate.io
 
@@ -46,6 +46,9 @@ jobs:
           name="${{ github.event.client_payload.vps_name || 'manual-vps' }}"
           zip -qr ".backup/$name.zip" . -x ".git/*" ".github/*" ".backup/*" || true
 
+      - name: 📤 Pull latest from origin
+        run: git pull --rebase origin main || true
+
       - name: 📤 Push updated files
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
@@ -54,7 +57,7 @@ jobs:
 
       - name: ⏳ Keep VPS alive
         run: |
-          for i in $(seq 1 $((360))); do
+          for i in $(seq 1 360); do
             echo "🟢 Running minute $i/360..."
             sleep 60
           done
@@ -68,4 +71,3 @@ jobs:
             -H "Content-Type: application/json" \
             https://api.github.com/repos/${{ github.repository }}/dispatches \
             -d '{"event_type": "create-vps", "client_payload": {"vps_name": "manual-vps", "backup": true}}'
-            
