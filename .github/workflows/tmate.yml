@@ -8,15 +8,13 @@ on:
 jobs:
   start-vps:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 360  # 6 hours
     env:
       TMATE_SERVER: nyc1.tmate.io
 
     steps:
       - name: ⬇️ Checkout
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0  # Bắt buộc để git pull hoạt động đúng
 
       - name: 📁 Prepare dirs
         run: mkdir -p links .backup
@@ -48,18 +46,15 @@ jobs:
           name="${{ github.event.client_payload.vps_name || 'manual-vps' }}"
           zip -qr ".backup/$name.zip" . -x ".git/*" ".github/*" ".backup/*" || true
 
-      - name: 📤 Commit và push thay vì dùng git-auto-commit-action
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git pull --rebase origin main || true
-          git add links/*.txt .backup/*.zip
-          git commit -m "🔁 Updated SSH + backup" || echo "Không có gì để commit"
-          git push origin main || echo "⚠️ Push thất bại vì có commit khác"
+      - name: 📤 Push updated files
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "🔁 Updated SSH + backup"
+          file_pattern: 'links/*.txt .backup/*.zip'
 
       - name: ⏳ Keep VPS alive
         run: |
-          for i in $(seq 1 360); do
+          for i in $(seq 1 $((360))); do
             echo "🟢 Running minute $i/360..."
             sleep 60
           done
